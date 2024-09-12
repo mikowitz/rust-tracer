@@ -56,7 +56,7 @@ impl Camera {
                 let ray_direction = pixel_center - self.center;
                 let ray = Ray::new(self.center, ray_direction);
 
-                let pixel_color = ray_color(&ray, &world);
+                let pixel_color = ray_color(&ray, world);
 
                 writeln!(&mut image, "{}", pixel_color.to_ppm()).unwrap();
             }
