@@ -1,8 +1,12 @@
+#![allow(mixed_script_confusables)]
+
 use std::env;
 use std::{fs::File, io::Write};
 
 use indicatif::{ProgressBar, ProgressStyle};
 use rust_tracer::color::Color;
+use rust_tracer::ray::Ray;
+use rust_tracer::vec3::{Point, Vector};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -10,14 +14,33 @@ fn main() {
     if args.len() > 1 {
         filename = &args[1];
     }
-
-    let image_width: u32 = 256;
-    let image_height: u32 = 256;
-
     let mut image = File::create(filename).unwrap();
 
-    println!("Writing to {}", filename);
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 400;
 
+    let mut image_height = (image_width as f32 / aspect_ratio) as i32;
+    if image_height < 1 {
+        image_height = 1
+    };
+
+    let focal_length = 1.0;
+    let viewport_height = 2.0;
+    let viewport_width = viewport_height * (image_width as f32 / image_height as f32);
+    let camera_center = Point::new(0., 0., 0.);
+
+    let viewport_u = Vector::new(viewport_width, 0., 0.);
+    let viewport_v = Vector::new(0., -viewport_height, 0.);
+
+    let pixelδu = viewport_u / image_width as f32;
+    let pixelδv = viewport_v / image_height as f32;
+
+    let viewport_upper_left =
+        camera_center - Vector::new(0., 0., focal_length) - viewport_u / 2.0 - viewport_v / 2.0;
+
+    let pixel00_loc = viewport_upper_left + (pixelδu + pixelδv) * 0.5;
+
+    println!("Writing to {}", filename);
     writeln!(&mut image, "P3\n{} {}\n255", image_width, image_height).unwrap();
 
     let bar = ProgressBar::new((image_width * image_height) as u64).with_style(
@@ -29,14 +52,22 @@ fn main() {
 
     for y in 0..image_height {
         for x in 0..image_width {
-            let pixel_color = Color::new(
-                0.0,
-                y as f32 / (image_height - 1) as f32,
-                x as f32 / (image_width - 1) as f32,
-            );
+            let pixel_center = pixel00_loc + pixelδu * x as f32 + pixelδv * y as f32;
+
+            let ray_direction = pixel_center - camera_center;
+            let ray = Ray::new(camera_center, ray_direction);
+
+            let pixel_color = ray_color(&ray);
 
             writeln!(&mut image, "{}", pixel_color.to_ppm()).unwrap();
         }
     }
     bar.finish();
+}
+
+fn ray_color(r: &Ray) -> Color {
+    // Color::black()
+    let unit_direction = r.direction.normalize();
+    let a = 0.5 * (unit_direction.y + 1.0);
+    Color::white() * (1.0 - a) + Color::new(0.5, 0.7, 1.0) * a
 }

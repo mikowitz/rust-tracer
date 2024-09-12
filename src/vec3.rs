@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Neg};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vec3 {
@@ -54,6 +54,13 @@ impl Add for Vec3 {
     }
 }
 
+impl Sub for Vec3 {
+    type Output = Vec3;
+    fn sub(self, rhs: Self) -> Self::Output {
+        Vec3::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
+    }
+}
+
 impl Mul<f32> for Vec3 {
     type Output = Vec3;
     fn mul(self, rhs: f32) -> Self::Output {
@@ -92,6 +99,16 @@ mod tests {
         let b = Vec3::new(1., -3., 4.);
 
         assert_eq!(a + b, Vec3::new(2., -1., 7.));
+        assert_eq!(a + b, b + a);
+    }
+
+    #[test]
+    fn subtract() {
+        let a = Vec3::new(1., 2., 3.);
+        let b = Vec3::new(1., -3., 4.);
+
+        assert_eq!(a - b, Vec3::new(0., 5., -1.));
+        assert_eq!(b - a, Vec3::new(0., -5., 1.));
     }
 
     #[test]
