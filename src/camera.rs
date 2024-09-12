@@ -1,5 +1,6 @@
 use core::f32;
 use indicatif::{ProgressBar, ProgressStyle};
+use rand::prelude::*;
 use std::{fs::File, io::Write};
 
 use crate::{
@@ -15,12 +16,14 @@ use crate::{
 pub struct Camera {
     pub image_width: u32,
     pub aspect_ratio: f32,
+    pub samples_per_pixel: u32,
 
     image_height: u32,
     center: Point,
     pixelδu: Vector,
     pixelδv: Vector,
     pixel00_loc: Point,
+    pixels_sample_scale: f32,
 }
 
 impl Camera {
@@ -43,30 +46,47 @@ impl Camera {
 
         let bar = ProgressBar::new((self.image_width * self.image_height) as u64).with_style(
         ProgressStyle::with_template(
-            "[{elapsed_precise} / {duration_precise}] {bar:50.blue/red} ({percent:>3}%) {pos:>7}/{len:7}",
+            "[{elapsed_precise} / {eta_precise}] {bar:50.blue/red} ({percent:>3}%) {pos:>7}/{len:7}",
         )
         .unwrap(),
     );
 
         for y in 0..self.image_height {
             for x in 0..self.image_width {
-                let pixel_center =
-                    self.pixel00_loc + self.pixelδu * x as f32 + self.pixelδv * y as f32;
+                let mut pixel_color = Color::black();
+                for _ in 0..self.samples_per_pixel {
+                    let ray = self.get_ray(x, y);
+                    pixel_color = pixel_color + ray_color(&ray, world);
+                }
 
-                let ray_direction = pixel_center - self.center;
-                let ray = Ray::new(self.center, ray_direction);
-
-                let pixel_color = ray_color(&ray, world);
+                pixel_color = pixel_color * self.pixels_sample_scale;
 
                 writeln!(&mut image, "{}", pixel_color.to_ppm()).unwrap();
+                bar.inc(1);
             }
         }
         bar.finish();
     }
 
+    fn get_ray(&self, x: u32, y: u32) -> Ray {
+        let mut rng = rand::thread_rng();
+        let x_offset = rng.gen::<f32>() - 0.5;
+        let y_offset = rng.gen::<f32>() - 0.5;
+        let pixel_sample = self.pixel00_loc
+            + self.pixelδu * (x as f32 + x_offset)
+            + self.pixelδv * (y as f32 + y_offset);
+
+        let origin = self.center;
+        let direction = pixel_sample - origin;
+
+        Ray::new(origin, direction)
+    }
+
     fn initialize(&mut self) {
         let image_height = (self.image_width as f32 / self.aspect_ratio) as u32;
         self.image_height = if image_height < 1 { 1 } else { image_height };
+
+        self.pixels_sample_scale = 1.0 / (self.samples_per_pixel as f32);
 
         self.center = Point::new(0., 0., 0.);
 

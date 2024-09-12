@@ -1,4 +1,4 @@
-use crate::vec3::Vec3;
+use crate::{interval::Interval, vec3::Vec3};
 
 pub type Color = Vec3;
 
@@ -12,9 +12,10 @@ impl Color {
     }
 
     pub fn to_ppm(self) -> String {
-        let r = (255.999 * self.x) as u32;
-        let g = (255.999 * self.y) as u32;
-        let b = (255.999 * self.z) as u32;
+        let i = Interval::new(0.000, 0.999);
+        let r = (256.0 * i.clamp(self.x)) as u32;
+        let g = (256.0 * i.clamp(self.y)) as u32;
+        let b = (256.0 * i.clamp(self.z)) as u32;
 
         format!("{} {} {}", r, g, b)
     }
