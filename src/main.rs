@@ -2,6 +2,7 @@ use std::env;
 use std::{fs::File, io::Write};
 
 use indicatif::{ProgressBar, ProgressStyle};
+use rust_tracer::color::Color;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -28,12 +29,13 @@ fn main() {
 
     for y in 0..image_height {
         for x in 0..image_width {
-            let r = 0;
-            let g = (255.999 * y as f32 / (image_height - 1) as f32) as i32;
-            let b = (255.999 * x as f32 / (image_width - 1) as f32) as i32;
+            let pixel_color = Color::new(
+                0.0,
+                y as f32 / (image_height - 1) as f32,
+                x as f32 / (image_width - 1) as f32,
+            );
 
-            writeln!(&mut image, "{} {} {}", r, g, b).unwrap();
-            bar.inc(1);
+            writeln!(&mut image, "{}", pixel_color.to_ppm()).unwrap();
         }
     }
     bar.finish();
