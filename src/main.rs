@@ -5,8 +5,12 @@ use std::{fs::File, io::Write};
 
 use indicatif::{ProgressBar, ProgressStyle};
 use rust_tracer::color::Color;
+use rust_tracer::entity::Entity;
+use rust_tracer::hittable::Hittable;
+use rust_tracer::interval::Interval;
 use rust_tracer::ray::Ray;
 use rust_tracer::vec3::{Point, Vector};
+use rust_tracer::world::World;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -40,6 +44,10 @@ fn main() {
 
     let pixel00_loc = viewport_upper_left + (pixelδu + pixelδv) * 0.5;
 
+    let mut world = World::new();
+    world.add(Entity::Sphere(Point::new(0., 0., -1.0), 0.5));
+    world.add(Entity::Sphere(Point::new(0., -100.5, -1.0), 100.));
+
     println!("Writing to {}", filename);
     writeln!(&mut image, "P3\n{} {}\n255", image_width, image_height).unwrap();
 
@@ -57,7 +65,7 @@ fn main() {
             let ray_direction = pixel_center - camera_center;
             let ray = Ray::new(camera_center, ray_direction);
 
-            let pixel_color = ray_color(&ray);
+            let pixel_color = ray_color(&ray, &world);
 
             writeln!(&mut image, "{}", pixel_color.to_ppm()).unwrap();
         }
@@ -65,21 +73,12 @@ fn main() {
     bar.finish();
 }
 
-fn hit_sphere(center: Point, radius: f32, ray: &Ray) -> bool {
-    let oc = center - ray.origin;
-    let a = ray.direction.dot(ray.direction);
-    let b = -2.0 * ray.direction.dot(oc);
-    let c = oc.dot(oc) - radius * radius;
-    let discriminant = b * b - 4.0 * a * c;
-
-    discriminant >= 0.0
-}
-
-fn ray_color(r: &Ray) -> Color {
-    if hit_sphere(Point::new(0., 0., -1.), 0.5, r) {
-        return Color::new(1., 0., 0.);
+fn ray_color(ray: &Ray, world: &World) -> Color {
+    let rec = world.hit(ray, &Interval::new(0., f32::INFINITY));
+    if let Some(rec) = rec {
+        return (rec.normal + Color::white()) * 0.5;
     }
-    let unit_direction = r.direction.normalize();
+    let unit_direction = ray.direction.normalize();
     let a = 0.5 * (unit_direction.y + 1.0);
     Color::white() * (1.0 - a) + Color::new(0.5, 0.7, 1.0) * a
 }
