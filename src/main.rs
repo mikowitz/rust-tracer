@@ -1,0 +1,40 @@
+use std::env;
+use std::{fs::File, io::Write};
+
+use indicatif::{ProgressBar, ProgressStyle};
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    let mut filename = "image.ppm";
+    if args.len() > 1 {
+        filename = &args[1];
+    }
+
+    let image_width: u32 = 256;
+    let image_height: u32 = 256;
+
+    let mut image = File::create(filename).unwrap();
+
+    println!("Writing to {}", filename);
+
+    writeln!(&mut image, "P3\n{} {}\n255", image_width, image_height).unwrap();
+
+    let bar = ProgressBar::new((image_width * image_height) as u64).with_style(
+        ProgressStyle::with_template(
+            "[{elapsed_precise} / {duration_precise}] {bar:50.blue/red} ({percent:>3}%) {pos:>7}/{len:7}",
+        )
+        .unwrap(),
+    );
+
+    for y in 0..image_height {
+        for x in 0..image_width {
+            let r = 0;
+            let g = (255.999 * y as f32 / (image_height - 1) as f32) as i32;
+            let b = (255.999 * x as f32 / (image_width - 1) as f32) as i32;
+
+            writeln!(&mut image, "{} {} {}", r, g, b).unwrap();
+            bar.inc(1);
+        }
+    }
+    bar.finish();
+}
