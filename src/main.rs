@@ -18,6 +18,7 @@ fn main() {
     let mut c = Camera::new();
     c.aspect_ratio = 16.0 / 9.0;
     c.image_width = 400;
+    c.samples_per_pixel = 100;
 
     c.render(&world, filename);
 }
