@@ -2,6 +2,7 @@ use crate::{
     entity::Entity, hit_record::HitRecord, hittable::Hittable, interval::Interval, ray::Ray,
 };
 
+#[derive(Default)]
 pub struct World {
     pub entities: Vec<Entity>,
 }

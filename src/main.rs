@@ -74,9 +74,9 @@ fn main() {
 }
 
 fn ray_color(ray: &Ray, world: &World) -> Color {
-    let rec = world.hit(ray, &Interval::new(0., std::f32::INFINITY));
-    if rec.is_some() {
-        return (rec.unwrap().normal + Color::white()) * 0.5;
+    let rec = world.hit(ray, &Interval::new(0., f32::INFINITY));
+    if let Some(rec) = rec {
+        return (rec.normal + Color::white()) * 0.5;
     }
     let unit_direction = ray.direction.normalize();
     let a = 0.5 * (unit_direction.y + 1.0);
