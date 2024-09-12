@@ -1,0 +1,24 @@
+name: "Clippy"
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  clippy:
+    strategy:
+      matrix:
+        version: ["stable", "nightly"]
+    runs-on: ubuntu-latest
+    name: "[${{ matrix.version }}] Clippy"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.version }}
+          components: clippy
+
+      - run: cargo clippy --lib --all-features
