@@ -55,7 +55,7 @@ impl Camera {
 
         let bar = ProgressBar::new((self.image_width * self.image_height) as u64).with_style(
             ProgressStyle::with_template(
-                "[{elapsed_precise}] {bar:50.blue/red} ({percent:>3}%) {pos:>6}/{len:6}",
+                "[{elapsed_precise} / {eta_precise}] {bar:50.blue/red} ({percent:>3}%) {pos:>6}/{len:6}",
             )
             .unwrap(),
         );
