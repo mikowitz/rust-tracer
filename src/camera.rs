@@ -17,6 +17,7 @@ pub struct Camera {
     pub image_width: u32,
     pub aspect_ratio: f32,
     pub samples_per_pixel: u32,
+    pub max_depth: u32,
 
     image_height: u32,
     center: Point,
@@ -56,7 +57,7 @@ impl Camera {
                 let mut pixel_color = Color::black();
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(x, y);
-                    pixel_color = pixel_color + ray_color(&ray, world);
+                    pixel_color = pixel_color + ray_color(&ray, self.max_depth, world);
                 }
 
                 pixel_color = pixel_color * self.pixels_sample_scale;
@@ -107,9 +108,14 @@ impl Camera {
     }
 }
 
-fn ray_color(ray: &Ray, world: &World) -> Color {
-    if let Some(rec) = world.hit(ray, &Interval::new(0., f32::INFINITY)) {
-        return (rec.normal + Color::white()) * 0.5;
+fn ray_color(ray: &Ray, depth: u32, world: &World) -> Color {
+    if depth == 0 {
+        return Color::black();
+    }
+
+    if let Some(rec) = world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
+        let direction = rec.normal + Vector::random_normalized();
+        return ray_color(&Ray::new(rec.p, direction), depth - 1, world) * 0.5;
     }
     let unit_direction = ray.direction.normalize();
     let a = 0.5 * (unit_direction.y + 1.0);

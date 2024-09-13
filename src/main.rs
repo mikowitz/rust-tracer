@@ -19,6 +19,7 @@ fn main() {
     c.aspect_ratio = 16.0 / 9.0;
     c.image_width = 400;
     c.samples_per_pixel = 100;
+    c.max_depth = 50;
 
     c.render(&world, filename);
 }

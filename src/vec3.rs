@@ -1,3 +1,4 @@
+use rand::prelude::*;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -13,6 +14,34 @@ pub type Point = Vec3;
 impl Vec3 {
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
+    }
+
+    pub fn random() -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            x: rng.gen::<f32>(),
+            y: rng.gen::<f32>(),
+            z: rng.gen::<f32>(),
+        }
+    }
+
+    pub fn random_in(min: f32, max: f32) -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            x: rng.gen_range(min..max),
+            y: rng.gen_range(min..max),
+            z: rng.gen_range(min..max),
+        }
+    }
+
+    pub fn random_normalized() -> Self {
+        loop {
+            let p = Self::random_in(-1., 1.);
+            let lensq = p.length_squared();
+            if 1e-160 < lensq && lensq <= 1.0 {
+                break p.normalize();
+            }
+        }
     }
 
     pub fn dot(self, rhs: Self) -> f32 {
