@@ -22,6 +22,8 @@ pub struct Camera {
     pub lookfrom: Point,
     pub lookat: Point,
     pub vup: Vector,
+    pub defocus_angle: f32,
+    pub focus_dist: f32,
 
     image_height: u32,
     center: Point,
@@ -29,6 +31,8 @@ pub struct Camera {
     pixelδv: Vector,
     pixel00_loc: Point,
     pixels_sample_scale: f32,
+    defocus_disk_u: Vector,
+    defocus_disk_v: Vector,
 }
 
 impl Camera {
@@ -81,10 +85,19 @@ impl Camera {
             + self.pixelδu * (x as f32 + x_offset)
             + self.pixelδv * (y as f32 + y_offset);
 
-        let origin = self.center;
+        let origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
         let direction = pixel_sample - origin;
 
         Ray::new(origin, direction)
+    }
+
+    fn defocus_disk_sample(&self) -> Point {
+        let p = Point::random_in_unit_disk();
+        self.center + self.defocus_disk_u * p.x + self.defocus_disk_v * p.y
     }
 
     fn initialize(&mut self) {
@@ -95,10 +108,9 @@ impl Camera {
 
         self.center = self.lookfrom;
 
-        let focal_length = (self.lookfrom - self.lookat).magnitude();
         let θ = degrees_to_radians(self.vfov);
         let h = (θ / 2.0).tan();
-        let viewport_height = 2.0 * h * focal_length;
+        let viewport_height = 2.0 * h * self.focus_dist;
         let viewport_width = viewport_height * (self.image_width as f32 / self.image_height as f32);
 
         let w = (self.lookfrom - self.lookat).normalize();
@@ -112,9 +124,13 @@ impl Camera {
         self.pixelδv = viewport_v / self.image_height as f32;
 
         let viewport_upper_left =
-            self.center - w * focal_length - viewport_u / 2.0 - viewport_v / 2.0;
+            self.center - w * self.focus_dist - viewport_u / 2.0 - viewport_v / 2.0;
 
         self.pixel00_loc = viewport_upper_left + (self.pixelδu + self.pixelδv) * 0.5;
+
+        let defocus_radius = self.focus_dist * degrees_to_radians(self.defocus_angle / 2.0).tan();
+        self.defocus_disk_u = u * defocus_radius;
+        self.defocus_disk_v = v * defocus_radius;
     }
 }
 

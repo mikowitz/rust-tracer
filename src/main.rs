@@ -34,6 +34,8 @@ fn main() {
     c.lookfrom = Point::new(-2., 2., 1.);
     c.lookat = Point::new(0., 0., -1.);
     c.vup = Vector::new(0., 1., 0.);
+    c.defocus_angle = 10.0;
+    c.focus_dist = 3.4;
 
     c.render(&world, filename);
 }
