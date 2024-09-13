@@ -16,6 +16,6 @@ pub mod prelude {
     pub use super::color::Color;
     pub use super::entity::Entity::Sphere;
     pub use super::material::Material;
-    pub use super::vec3::Point;
+    pub use super::vec3::{Point, Vector};
     pub use super::world::World;
 }

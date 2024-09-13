@@ -2,7 +2,7 @@
 
 use std::env;
 
-use rust_tracer::{material::Material, prelude::*};
+use rust_tracer::prelude::*;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -15,7 +15,7 @@ fn main() {
     let center_mat = Material::Lambertian(Color::new(0.1, 0.2, 0.5));
     let left_mat = Material::Dielectric(1.5);
     let bubble_mat = Material::Dielectric(1.0 / 1.5);
-    let right_mat = Material::Metal(Color::new(0.8, 0.6, 0.2), 1.0);
+    let right_mat = Material::Metal(Color::new(0.8, 0.6, 0.2), 0.5);
 
     let mut world = World::new();
 
@@ -30,6 +30,10 @@ fn main() {
     c.image_width = 1000;
     c.samples_per_pixel = 100;
     c.max_depth = 50;
+    c.vfov = 25.0;
+    c.lookfrom = Point::new(-2., 2., 1.);
+    c.lookat = Point::new(0., 0., -1.);
+    c.vup = Vector::new(0., 1., 0.);
 
     c.render(&world, filename);
 }
