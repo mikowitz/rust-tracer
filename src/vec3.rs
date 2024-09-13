@@ -76,6 +76,13 @@ impl Vec3 {
     pub fn reflect(self, rhs: Self) -> Self {
         self - rhs * self.dot(rhs) * 2.0
     }
+
+    pub fn refract(self, normal: Self, ηi_over_ηt: f32) -> Self {
+        let cosθ = -self.dot(normal).min(1.0);
+        let r_out_perp = (self + normal * cosθ) * ηi_over_ηt;
+        let r_out_parallel = normal * -(1.0 - r_out_perp.length_squared()).abs().sqrt();
+        r_out_perp + r_out_parallel
+    }
 }
 
 impl Neg for Vec3 {
