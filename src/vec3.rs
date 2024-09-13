@@ -67,6 +67,15 @@ impl Vec3 {
     pub fn length_squared(self) -> f32 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
+
+    pub fn is_near_zero(self) -> bool {
+        let s = 1.0e-8;
+        self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
+    }
+
+    pub fn reflect(self, rhs: Self) -> Self {
+        self - rhs * self.dot(rhs) * 2.0
+    }
 }
 
 impl Neg for Vec3 {

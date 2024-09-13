@@ -114,8 +114,11 @@ fn ray_color(ray: &Ray, depth: u32, world: &World) -> Color {
     }
 
     if let Some(rec) = world.hit(ray, &Interval::new(0.001, f32::INFINITY)) {
-        let direction = rec.normal + Vector::random_normalized();
-        return ray_color(&Ray::new(rec.p, direction), depth - 1, world) * 0.5;
+        if let Some(scatter) = rec.material.scatter(ray, &rec) {
+            return scatter.attenuation * ray_color(&scatter.scattered, depth - 1, world);
+        } else {
+            return Color::black();
+        }
     }
     let unit_direction = ray.direction.normalize();
     let a = 0.5 * (unit_direction.y + 1.0);
