@@ -1,6 +1,7 @@
 use core::f32;
 use indicatif::{ProgressBar, ProgressStyle};
 use rand::prelude::*;
+use rayon::prelude::*;
 use std::{f32::consts::PI, fs::File, io::Write};
 
 use crate::{
@@ -55,26 +56,29 @@ impl Camera {
 
         let bar = ProgressBar::new((self.image_width * self.image_height) as u64).with_style(
             ProgressStyle::with_template(
-                "[{elapsed_precise} / {eta_precise}] {bar:50.blue/red} ({percent:>3}%) {pos:>6}/{len:6}",
+                "[{elapsed_precise} / {eta_precise}] {bar:50.blue/red} ({percent:>3}%) {pos:>6}/{len:6} ({per_sec})",
             )
             .unwrap(),
         );
 
+        let mut coords: Vec<(u32, u32)> = vec![];
         for y in 0..self.image_height {
             for x in 0..self.image_width {
-                let mut pixel_color = Color::black();
-                for _ in 0..self.samples_per_pixel {
-                    let ray = self.get_ray(x, y);
-                    pixel_color = pixel_color + ray_color(&ray, self.max_depth, world);
-                }
-
-                pixel_color = pixel_color * self.pixels_sample_scale;
-
-                writeln!(&mut image, "{}", pixel_color.to_ppm()).unwrap();
-                bar.inc(1);
+                coords.push((x, y));
             }
         }
+
+        let rows: Vec<&mut [(u32, u32)]> = coords.chunks_mut(self.image_width as usize).collect();
+
+        let pixels = rows
+            .into_par_iter()
+            .map(|row| self.generate_row(row, world, &bar))
+            .flatten()
+            .collect::<Vec<String>>()
+            .join("\n");
+
         bar.finish();
+        writeln!(&mut image, "{}", pixels).unwrap();
     }
 
     fn get_ray(&self, x: u32, y: u32) -> Ray {
@@ -131,6 +135,30 @@ impl Camera {
         let defocus_radius = self.focus_dist * degrees_to_radians(self.defocus_angle / 2.0).tan();
         self.defocus_disk_u = u * defocus_radius;
         self.defocus_disk_v = v * defocus_radius;
+    }
+
+    fn generate_row(
+        &self,
+        row: &mut [(u32, u32)],
+        world: &World,
+        bar: &ProgressBar,
+    ) -> Vec<String> {
+        row.into_par_iter()
+            .map(|c| self.generate_pixel(c.0, c.1, world, bar))
+            .collect::<Vec<String>>()
+    }
+
+    fn generate_pixel(&self, x: u32, y: u32, world: &World, bar: &ProgressBar) -> String {
+        let pixel_color: Color = (0..self.samples_per_pixel)
+            .into_par_iter()
+            .map(|_| {
+                let ray = self.get_ray(x, y);
+                ray_color(&ray, self.max_depth, world)
+            })
+            .reduce(Color::black, |a, b| a + b)
+            * self.pixels_sample_scale;
+        bar.inc(1);
+        pixel_color.to_ppm()
     }
 }
 
