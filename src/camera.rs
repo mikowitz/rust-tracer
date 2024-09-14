@@ -96,7 +96,7 @@ impl Camera {
         };
         let direction = pixel_sample - origin;
 
-        Ray::new(origin, direction)
+        Ray::new(origin, direction, rng.gen::<f32>())
     }
 
     fn defocus_disk_sample(&self) -> Point {
