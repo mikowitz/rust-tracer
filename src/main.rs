@@ -26,21 +26,21 @@ fn main() {
 
     let mut world = World::new();
 
-    world.add(Sphere(
+    world.add(Entity::sphere(
         Point::new(0., -1000., 0.),
         1000.0,
         Lambertian(Color::new(0.5, 0.5, 0.5)),
     ));
-    world.add(Sphere(Point::new(0., 1., 0.), 1.0, Dielectric(1.5)));
-    world.add(Sphere(
+    world.add(Entity::sphere(Point::new(0., 1., 0.), 1.0, Dielectric(1.5)));
+    world.add(Entity::sphere(
         Point::new(-4., 1., 0.),
         1.0,
         Lambertian(Color::new(0.1, 0.2, 0.4)),
     ));
-    world.add(Sphere(
+    world.add(Entity::sphere(
         Point::new(4., 1., 0.),
         1.0,
-        Metal(Color::new(0.7, 0.6, 0.5), 0.1),
+        Metal(Color::new(0.7, 0.6, 0.5), 0.0),
     ));
 
     let mut rng = rand::thread_rng();
@@ -54,18 +54,20 @@ fn main() {
             );
 
             if (center - Point::new(4., 0.2, 0.)).magnitude() > 0.9 {
-                let material = if choose_mat < 0.8 {
+                if choose_mat < 0.8 {
                     let albedo = Color::random() * Color::random();
-                    Lambertian(albedo)
+                    let material = Lambertian(albedo);
+                    let center2 = center + Point::new(0., rng.gen_range(0.0..0.5), 0.);
+                    world.add(Entity::moving_sphere(center, center2, 0.2, material));
                 } else if choose_mat < 0.95 {
                     let albedo = Color::random_in(0.5, 1.0);
                     let fuzz = rng.gen_range(0.0..0.5);
-                    Metal(albedo, fuzz)
+                    let material = Metal(albedo, fuzz);
+                    world.add(Entity::sphere(center, 0.2, material));
                 } else {
-                    Dielectric(1.5)
+                    let material = Dielectric(1.5);
+                    world.add(Entity::sphere(center, 0.2, material));
                 };
-
-                world.add(Sphere(center, 0.2, material));
             }
         }
     }
